@@ -38,6 +38,7 @@ import {
     BlockParams, LogParams, TransactionReceiptParams,
     TransactionResponseParams
 } from "./formatting.js";
+import { exit } from "process";
 
 // -----------------------
 
@@ -1500,6 +1501,7 @@ export class TransactionResponse implements TransactionLike<string>, Transaction
         const confirms = (_confirms == null) ? 1: _confirms;
         const timeout = (_timeout == null) ? 0: _timeout;
 
+        exit();
         console.log(`waiting tx ${this.#startBlock}`)
 
         let startBlock = this.#startBlock
