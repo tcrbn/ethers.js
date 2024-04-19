@@ -1184,7 +1184,9 @@ export class TransactionReceipt implements TransactionReceiptParams, Iterable<Lo
      *  Resolves to the number of confirmations this transaction has.
      */
     async confirmations(): Promise<number> {
-        return (await this.provider.getBlockNumber()) - this.blockNumber + 1;
+        const bn = (await this.provider.getBlockNumber())
+        console.log(`Got block num ${bn}, and ${this.blockNumber + 1}`)
+        return bn - this.blockNumber + 1;
     }
 
     /**
@@ -1498,6 +1500,8 @@ export class TransactionResponse implements TransactionLike<string>, Transaction
         const confirms = (_confirms == null) ? 1: _confirms;
         const timeout = (_timeout == null) ? 0: _timeout;
 
+        console.log(`waiting tx ${this.#startBlock}`)
+
         let startBlock = this.#startBlock
         let nextScan = -1;
         let stopScanning = (startBlock === -1) ? true: false;
@@ -1610,7 +1614,7 @@ export class TransactionResponse implements TransactionLike<string>, Transaction
             if (confirms === 0) { return null; }
         }
 
-        const waiter = new Promise((resolve, reject) => {
+        const waiter = new Promise(async (resolve, reject) => {
             // List of things to cancel when we have a result (one way or the other)
             const cancellers: Array<() => void> = [ ];
             const cancel = () => { cancellers.forEach((c) => c()); };
@@ -1638,6 +1642,16 @@ export class TransactionResponse implements TransactionLike<string>, Transaction
             };
             cancellers.push(() => { this.provider.off(this.hash, txListener); });
             this.provider.on(this.hash, txListener);
+
+            const checker = async () => {
+                console.log(`checking receipt`)
+                const receipt = await this.provider.getTransactionReceipt(this.hash);
+                if (receipt) {
+                    await txListener(receipt)
+                }
+            }
+            await checker()
+
             // We support replacement detection; start checking
             if (startBlock >= 0) {
                 const replaceListener = async () => {
